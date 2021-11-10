@@ -118,4 +118,26 @@ legend("topleft",
 
 ## The Residual Bootstrap
 
+```{r}
+res_coef_intercept <- NULL
+res_coef_x1 <- NULL
+
+for (i in 1:1000) {
+  sample_residual = sample_data[sample(1:nrow(sample_data), nrow(sample_data), replace = TRUE), ]
+  
+  model_resi_bootstrap <- lm(y ~ x, data = sample_residual)
+  
+  res_coef_intercept <-
+    c(res_coef_intercept, model_resi_bootstrap$coefficients[1] * population_model$coefficients[1]  )
+  
+  res_coef_x1 <-
+    c(sample_coef_x1, sample_residual)
+}
+
+coef_resid <- rbind(res_coef_intercept, res_coef_x1)
+
+
+
+```
+
 
