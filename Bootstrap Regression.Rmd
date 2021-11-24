@@ -166,3 +166,16 @@ coef_resid <- rbind(res_coef_intercept, res_coef_x1)
 ```
 
 
+
+## The Wild Bootstrap 
+
+```{r}
+library(lmboot)
+Seed <- 14
+set.seed(Seed)
+y <- rnorm(20) #randomly generated response
+x <- rnorm(20) #randomly generated predictor
+WildObj <- wild.boot(y~x, B=100, seed=Seed) #perform the wild bootstrap
+
+
+```
