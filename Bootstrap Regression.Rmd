@@ -9,21 +9,21 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Simmple Regression with random data
+## Simulated Population Data
 
 ```{r}
 set.seed(22)
 
-n <- 2000
+n <- 200000
 x <- rnorm(n)
-y <- x + rnorm(n)
+y <- 0.45*x + rnorm(n)
 ```
 
 ## Transform to dataframe 
 
 ```{r}
  population_data <- as.data.frame(cbind(x,y))
- sample_data <- population_data[sample(nrow(population_data),20, replace = TRUE),]
+ sample_data <- population_data[sample(nrow(population_data), 200, replace = TRUE),]
 ```
 
 ## Models of population and sample
@@ -37,7 +37,7 @@ summary(sample_model)
 # Plot the models
 
 ```{r}
-plot(y ~ x, col = "gray", main = 'Population and Sample Regressions')
+plot(y ~ x, col = rgb(0.7, 0.7, 0.7, 0.5), pch=19, main = 'Population and Sample Regressions')
 abline(coef(population_model)[1], coef(population_model)[2], col = "red")
 abline(coef(sample_model)[1],
        coef(sample_model)[2],
@@ -50,7 +50,7 @@ legend(
   lty = 1:2,
   cex = 0.8)
 ```
-# The Bootstrap REgression
+# The Bootstrap Regression
 ```{r}
 sample_coef_intercept <- NULL
 sample_coef_x1 <- NULL
@@ -67,7 +67,8 @@ for (i in 1:1000) {
     c(sample_coef_x1, model_bootstrap$coefficients[2])
 }
 
-coefs <- rbind(sample_coef_intercept, sample_coef_x1) # Use Cbind instead of rbind
+
+coefs <- cbind(sample_coef_intercept, sample_coef_x1)
 
 
 
@@ -94,7 +95,10 @@ plot(
   xlab = "x",
   ylab = "y",
   main = "Compare regressions")
-apply(coefs, 2, abline, col = rgb(1, 0, 0, 0.03)) # change 2 to 1 while using cbind
+
+
+apply(coefs, 1, abline, col = rgb(1, 0, 0, 0.03))
+
 abline(coef(population_model)[1], coef(population_model)[2], col = "blue")
 abline(coef(sample_model)[1],
        coef(sample_model)[2],
@@ -119,6 +123,30 @@ legend("topleft",
 ## The Residual Bootstrap
 
 ```{r}
+# 1. Run the regression and obtain the estimators and residuals
+beta <- sample_model$coefficients[2]
+res  <- sample_model$residuals
+
+res_boot <- function(sample_data, res) {
+  # 2. Resample the residuals with replacement and obtain the bootstrapped residual vector resb
+  resb <- sample(res, length(res), replace = TRUE)
+  
+  # 3. Obtain the bootstrapped dependent variable by multiplying the estimator(s) from (1) with the original regressors and adding the bootstrapped residual
+  yb   <- sample_data$x * beta + resb
+  
+  # 4. Run the regression with the bootstrapped dependent variables and the original regressors
+  regrb <- lm(yb ~ sample_data$x)
+  
+  unname(regrb$coefficients[2])
+}
+
+set.seed(7893454)
+beta_boot <- replicate(1000, res_boot(sample_data, res))
+
+```
+
+
+```{r}
 res_coef_intercept <- NULL
 res_coef_x1 <- NULL
 
@@ -135,9 +163,6 @@ for (i in 1:1000) {
 }
 
 coef_resid <- rbind(res_coef_intercept, res_coef_x1)
-
-
-
 ```
 
 
