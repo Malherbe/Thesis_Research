@@ -67,7 +67,7 @@ for (i in 1:1000) {
     c(sample_coef_x1, model_bootstrap$coefficients[2])
 }
 
-coefs <- rbind(sample_coef_intercept, sample_coef_x1)
+coefs <- rbind(sample_coef_intercept, sample_coef_x1) # Use Cbind instead of rbind
 
 
 
@@ -94,7 +94,7 @@ plot(
   xlab = "x",
   ylab = "y",
   main = "Compare regressions")
-apply(coefs, 2, abline, col = rgb(1, 0, 0, 0.03))
+apply(coefs, 2, abline, col = rgb(1, 0, 0, 0.03)) # change 2 to 1 while using cbind
 abline(coef(population_model)[1], coef(population_model)[2], col = "blue")
 abline(coef(sample_model)[1],
        coef(sample_model)[2],
