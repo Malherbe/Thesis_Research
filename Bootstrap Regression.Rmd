@@ -179,3 +179,26 @@ WildObj <- wild.boot(y~x, B=100, seed=Seed) #perform the wild bootstrap
 
 
 ```
+
+```{r}
+# 1. Run the regression and obtain the estimators and residuals for Wild Bootstrap
+beta_wild <- sample_model$coefficients[2]
+res_wild  <- sample_model$residuals
+
+wild_boot <- function(sample_data, res_wild) {
+  # 2. Resample the residuals with replacement and obtain the bootstrapped residual vector resb
+  normal_vector <- rnorm(20)
+  
+  # 3. Obtain the bootstrapped dependent variable by multiplying the estimator(s) from (1) with the original regressors and adding the bootstrapped residual
+  yb   <- sample_data$x * beta_wild + res_wild * normal_vector
+  
+  # 4. Run the regression with the bootstrapped dependent variables and the original regressors
+  wild_b <- lm(yb ~ sample_data$x)
+  
+  unname(wild_b$coefficients[2])
+}
+
+
+beta_boot_wild <- replicate(1000, wild_boot(sample_data, res_wild))
+
+```
