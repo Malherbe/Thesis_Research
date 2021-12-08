@@ -171,37 +171,31 @@ coef_resid <- rbind(res_coef_intercept, res_coef_x1)
 
 ```{r}
 library(lmboot)
-Seed <- 14
-set.seed(Seed)
-y <- rnorm(20) #randomly generated response
-x <- rnorm(20) #randomly generated predictor
-WildObj <- wild.boot(sample_data$y~sample_data$x, B=100) #perform the wild bootstrap
-
-
+set.seed(234431)
+WildObj <- wild.boot(sample_data$y~sample_data$x, B=1000)
 ```
 
 ```{r}
-# 1. Run the regression and obtain the estimators and residuals for Wild Bootstrap
-
-
-wild_boot <- function(sample_data, sample_model) {
- 
-  # 2. Resample the residuals with replacement and obtain the bootstrapped residual vector resb
+wild_boot <- function(estimated) {
+  sample_frame <- model.frame(estimated)
   
-  normal_vector <- rnorm(nrow(sample_data))
-  # 3. Obtain the bootstrapped dependent variable by multiplying the estimator(s) from (1) with the original regressors and adding the bootstrapped residual
-  yb <- sample_model$fitted.values + sample_model$residuals * normal_vector
+  normal_vector <- rnorm(nrow(sample_frame))
+  y_b <- estimated$fitted.values + estimated$residuals * normal_vector
   
-  # 4. Run the regression with the bootstrapped dependent variables and the original regressors
-  #wild_b <- lm(yb ~ sample_data$x)
-  wild_b <- update(sample_model, yb ~ ., data=sample_data)
+  sample_frame[,1] <- y_b
+  wild_regr <- update(estimated, . ~ ., data=sample_frame)
   
-  unname(wild_b$coefficients)
+  wild_regr$coefficients
 }
 
+beta_boot_wild <- replicate(
+  1000, wild_boot(sample_model)
+)
+```
 
-beta_boot_wild <- replicate(1000, wild_boot(sample_data, sample_model))
-
+Analyze results of Wild Bootstrap
+```{r}
 confint(sample_model, "x")
 
+quantile(beta_boot_wild["x",], probs = c(0.025, .975))
 ```
