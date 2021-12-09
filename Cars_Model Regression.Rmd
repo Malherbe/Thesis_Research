@@ -1,0 +1,21 @@
+---
+title: "Cars_Model REgression"
+author: '109077446'
+date: "12/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+In this script I will be working on the foloowing points: 
+
+ 1- Produce the last regression model by using the Cars data 
+ 2- Run the Regression
+ 3- Bootstrap the original dataset
+ 4- Mean centered the outcome, bootstrap it and see what the coefficient looks like.
+ 5- plot the coefficient 
+ 6- The density plot of the coefficient
