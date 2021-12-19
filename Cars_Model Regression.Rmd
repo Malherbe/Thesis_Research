@@ -59,8 +59,10 @@ abline(a=mean(coeffs["(Intercept)",]), b=mean(coeffs["log(weight)",]), lwd=2)
 # Mean Centering the Regression
 
 ```{r}
-cars_log_regr_centering <- lm(scale(log.mpg., scale = F) ~ scale(log.cylinders., scale = F)+scale(log.displacement.,scale = F)+scale(log.horsepower., scale = F)+scale(log.weight., scale = F)+scale(log.acceleration., scale = F)+scale(model_year, scale = F)+factor(origin),data=cars_log)
+cars_log_regr_centering <- lm(scale(log.mpg., scale = F) ~ log.cylinders.+log.displacement.+log.horsepower.+log.weight.+log.acceleration.+model_year+factor(origin),data=cars_log)
 summary(cars_log_regr_centering)
 ```
 
-```
+# Bootstrap the mean centered and plot the coefficient
+
+
