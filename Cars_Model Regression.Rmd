@@ -65,4 +65,13 @@ summary(cars_log_regr_centering)
 
 # Bootstrap the mean centered and plot the coefficient
 
+```{r}
+plot(log(cars$weight), log(cars$mpg), col=NA, pch=19, main="Bootstrapped Confidence Intervals")
+
+
+coeffs <- replicate(500, boot_regr(scale(log(mpg), scale = F) ~ log(weight), cars))
+points(log(cars$weight), log(cars$mpg), col="pink", pch=19)
+abline(a=mean(coeffs["(Intercept)",]), b=mean(coeffs["log(weight)",]), lwd=2)
+
+```
 

@@ -1,0 +1,100 @@
+---
+title: "Cross Validation"
+author: '109077446'
+date: "12/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load the packages, Caret for easily computing the cross-validation
+
+```{r}
+library(tidyverse)
+library(caret)
+
+```
+
+```{r}
+data("swiss")
+head(swiss, 3)
+```
+
+## The Validation set approach 
+
+
+Build (train) the model on the training data set
+Apply the model to the test data set to predict the outcome of new unseen observations
+Quantify the prediction error as the mean squared difference between the observed and the predicted outcome values.
+
+
+
+```{r}
+# Split the data into training and test set
+set.seed(123)
+training.samples <- swiss$Fertility %>%
+  createDataPartition(p = 0.8, list = FALSE)
+train.data  <- swiss[training.samples, ]
+test.data <- swiss[-training.samples, ]
+# Build the model
+model <- lm(Fertility ~., data = train.data)
+# Make predictions and compute the R2, RMSE and MAE
+predictions <- model %>% predict(test.data)
+data.frame( R2 = R2(predictions, test.data$Fertility),
+            RMSE = RMSE(predictions, test.data$Fertility),
+            MAE = MAE(predictions, test.data$Fertility))
+```
+
+## Leave One out Cross Validation - LOOCV
+
+Leave out one data point and build the model on the rest of the data set
+Test the model against the data point that is left out at step 1 and record the test error associated with the prediction
+Repeat the process for all data points
+Compute the overall prediction error by taking the average of all these test error estimates recorded at step 2.
+
+```{r}
+# Define training control
+train.control <- trainControl(method = "LOOCV")
+# Train the model
+model <- train(Fertility ~., data = swiss, method = "lm",
+               trControl = train.control)
+# Summarize the results
+print(model)
+```
+
+## K-fold cross-validation
+
+Randomly split the data set into k-subsets (or k-fold) (for example 5 subsets)
+Reserve one subset and train the model on all other subsets
+Test the model on the reserved subset and record the prediction error
+Repeat this process until each of the k subsets has served as the test set.
+Compute the average of the k recorded errors. This is called the cross-validation error serving as the performance metric for the model.
+
+
+```{r}
+# Define training control
+set.seed(123) 
+train.control <- trainControl(method = "cv", number = 10)
+# Train the model
+model <- train(Fertility ~., data = swiss, method = "lm",
+               trControl = train.control)
+# Summarize the results
+print(model)
+```
+
+## Repeated k-fold cross-validation
+
+```{r}
+# Define training control
+set.seed(123)
+train.control <- trainControl(method = "repeatedcv", 
+                              number = 10, repeats = 3)
+# Train the model
+model <- train(Fertility ~., data = swiss, method = "lm",
+               trControl = train.control)
+# Summarize the results
+print(model)
+```
+
