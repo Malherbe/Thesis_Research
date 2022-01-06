@@ -1,0 +1,77 @@
+---
+title: "Validation Set Approach to Cross-Validation"
+author: '109077446'
+date: "1/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+cars_data <- read.table("data/auto-data.txt", header=FALSE, na.strings = "?")
+names(cars_data) <- c("mpg", "cylinders", "displacement", "horsepower", 
+                      "weight", "acceleration", "model_year", "origin", "car_name")
+
+cars_data_clean <- na.omit(cars_data[,c(1:6)])
+
+summary(cars_data_clean)
+
+```
+
+
+## Center our predictors
+```{r}
+cylincers.c <- scale(cars_data_clean$cylinders, center=TRUE, scale=FALSE)
+displacement.c <- scale(cars_data_clean$displacement, center=TRUE, scale=FALSE)
+horsepower.c <- scale(cars_data_clean$horsepower, center=TRUE, scale=FALSE)
+weight.c <- scale(cars_data_clean$weight, center=TRUE, scale=FALSE)
+accelaration.c <- scale(cars_data_clean$acceleration, center=TRUE, scale=FALSE)
+
+# add them to the new dataset
+
+new.c.vars <- cbind(cylincers.c, displacement.c, horsepower.c, weight.c, accelaration.c )
+cars_data_clean <- cbind(cars_data_clean, new.c.vars)
+names(cars_data_clean)[7:11] <- c("cylincers.c", "displacement.c", "horsepower.c", "weight.c", "accelaration.c")
+summary(cars_data_clean)
+
+```
+## Create a training and a test dataset with 80% of the data in the training set
+```{r}
+set.seed(4236823)
+train_rows <- sample(1:nrow(cars_data_clean), 0.8*nrow(cars_data_clean))
+train_data <- cars_data_clean[train_rows, ]
+test_data  <- cars_data_clean[-train_rows, ]
+
+nrow(train_data)
+nrow(test_data)
+```
+
+## Fit a model in the training data
+
+```{r}
+
+train_model <- lm(mpg ~ cylincers.c + displacement.c + horsepower.c +  weight.c + accelaration.c, 
+                  data = train_data)
+summary(train_model)
+```
+## Predict on the testing dataset and calculate Root Mean Squared Error (RMSE)
+
+```{r}
+predictions <-  predict(train_model, test_data)
+
+original <- test_data$mpg
+errors <- original - predictions
+
+mse <- mean(errors^2)
+mse
+rmse <- sqrt(mse)
+rmse
+mae <- mean(abs(errors))
+mae
+```
+
+
