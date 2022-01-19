@@ -1,0 +1,105 @@
+---
+title: "K-Fold Validation"
+author: '109077446'
+date: "1/20/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+cars_data <- read.table("data/auto-data.txt", header=FALSE, na.strings = "?")
+names(cars_data) <- c("mpg", "cylinders", "displacement", "horsepower", 
+                      "weight", "acceleration", "model_year", "origin", "car_name")
+
+cars_data_clean <- na.omit(cars_data[,c(1:6)])
+
+summary(cars_data_clean)
+
+```
+
+
+## Center our predictors
+```{r}
+cylincers.c <- scale(cars_data_clean$cylinders, center=TRUE, scale=FALSE)
+displacement.c <- scale(cars_data_clean$displacement, center=TRUE, scale=FALSE)
+horsepower.c <- scale(cars_data_clean$horsepower, center=TRUE, scale=FALSE)
+weight.c <- scale(cars_data_clean$weight, center=TRUE, scale=FALSE)
+accelaration.c <- scale(cars_data_clean$acceleration, center=TRUE, scale=FALSE)
+
+# add them to the new dataset
+
+new.c.vars <- cbind(cylincers.c, displacement.c, horsepower.c, weight.c, accelaration.c )
+cars_data_clean <- cbind(cars_data_clean, new.c.vars)
+names(cars_data_clean)[7:11] <- c("cylincers.c", "displacement.c", "horsepower.c", "weight.c", "accelaration.c")
+summary(cars_data_clean)
+
+```
+
+## Define error metric
+
+```{r}
+RMSE <- function(f, o){
+  sqrt(mean((f - o)^2))
+}
+```
+
+
+## Partition the data 
+
+```{r}
+## Define k
+k <- 5
+
+set.seed(12345)
+cars_data_clean_k <- mutate(cars_data_clean,
+                   my.folds = sample(1:k,
+                                     size = nrow(cars_data_clean),
+                                     replace = TRUE))
+
+```
+
+## Train and validate the model 
+
+```{r}
+cv.fun <- function(this.fold, data){
+  
+  train_data <- filter(data, my.folds != this.fold)
+  validate_data <- filter(data, my.folds == this.fold)
+  
+  model <- lm(mpg ~ cylincers.c + displacement.c + horsepower.c +  weight.c + accelaration.c, 
+                  data = train_data)
+  
+  pred <- predict(model, newdata = validate_data) %>% as.vector()
+  
+  this.rmse <- RMSE(f = pred, o = validate_data$mpg)
+  
+  return(this.rmse)
+}
+```
+
+## Iterate through each fold
+
+```{r}
+cv.error <- sapply(seq_len(k),
+                   FUN = cv.fun,
+                   data = cars_data_clean_k) %>%
+  mean()
+
+
+```
+
+
+## Return the cross-validation error
+```{r}
+
+cv.error
+```
+
