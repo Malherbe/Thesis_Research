@@ -56,15 +56,28 @@ RMSE <- function(f, o){
 
 ```{r}
 ## Define k
-k <- 5
-
+k <- 10
 set.seed(12345)
+```
+
+Randomly sized groups:
+```{r}
 cars_data_clean_k <- mutate(cars_data_clean,
                    my.folds = sample(1:k,
                                      size = nrow(cars_data_clean),
                                      replace = TRUE))
 
 ```
+
+Evenly sized groups:
+```{r}
+rows <- nrow(cars_data_clean)
+repititions <- ceiling(rows / k)
+groups <- rep(1:k, repitions)[1:rows]
+scrambled_groups <- sample(groups, rows, replace = FALSE)
+cars_data_clean_k$my.folds <- scrambled_groups
+```
+
 
 ## Train and validate the model 
 
