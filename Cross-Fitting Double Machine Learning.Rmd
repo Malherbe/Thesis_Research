@@ -30,8 +30,8 @@ set.seed(123)
 M=500 # = Number of Simumations = #
  
 # = Matrix to store results = #
-thetahat=matrix(NA,M,3)
-colnames(thetahat)=c("OLS","Naive DML","Cross-fiting DML")
+thetahat=matrix(NA,M,5)
+colnames(thetahat)=c("OLS","Naive DML","Cross-fiting DML", "OLS+z", "DML with sum")
 
 
 for(i in 1:M){
@@ -44,7 +44,9 @@ for(i in 1:M){
   # = OLS estimate = #
   OLS=coef(lm(y~d))[2]
   thetahat[i,1]=OLS
- 
+ # = OLS estimate + z= #
+  OLS_plus_z=coef(lm(y~d+z))[2]
+  thetahat[i,4]=OLS_plus_z
   # = Naive DML = #
   # = Compute ghat = #
   model=randomForest(z,y,maxnodes = 20)
@@ -81,9 +83,26 @@ for(i in 1:M){
   theta2=mean(V2*(y[IC]-G2))/mean(V2*d[IC])
   theta_cf=mean(c(theta1,theta2))
   thetahat[i,3]=theta_cf
- 
+ # = Compute Cross-Fitting DML theta with sum
+  theta1_sum=sum(V1*(y[I]-G1))/sum(V1*d[I])
+  theta2_sum=sum(V2*(y[IC]-G2))/sum(V2*d[IC])
+  theta_cf_sum=sum(c(theta1_sum,theta2_sum))
+  thetahat[i,5]=theta_cf_sum
 }
  
 colMeans(thetahat) # = check the average theta for all models = #
 
 ```
+
+```{r}
+# = plot distributions = #
+plot(density(thetahat[,1]),xlim=c(0.3,1.4),ylim=c(0,14))
+lines(density(thetahat[,2]),col=2)
+lines(density(thetahat[,3]),col=4)
+lines(density(thetahat[,4]),lty = 'dashed')
+lines(density(thetahat[,5]),col=4, lty = 'dashed')
+abline(v=0.5,lty=2,col=3)
+legend("topleft",legend=c("OLS","Naive DML","Cross-fiting DML", "OLS+z", "DML with sum"),col=c(1,2,4,1,4),lty=1,cex=0.7,seg.len = 0.7,bty="n")
+
+```
+
