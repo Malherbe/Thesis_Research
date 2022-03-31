@@ -1,0 +1,110 @@
+---
+title: "PLS_DML"
+author: '109077446'
+date: "4/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(seminr)
+security_data_sem = read.csv("data/security_data_sem.csv")
+
+sec_measurement_model <- constructs(
+  composite("TRUST", multi_items('TRST',1:4)),
+  composite("SEC", multi_items('PSEC',1:4)),
+  composite("REP", multi_items('PREP',1:4)),
+  composite("INV", multi_items('PINV',1:3)),
+  composite("POL", multi_items('PPSS',1:3)),
+  composite("FAML", single_item('FAML1')),
+  interaction_term(iv = 'REP', moderator = 'POL', method = orthogonal)
+  
+  
+)
+
+sec_structural_model <- relationships(
+  paths(from = c("REP","INV","POL", "FAML", "REP*POL"), to = "SEC"),
+  paths(from = "SEC", to = "TRUST")
+  
+)
+
+sec_pls <- estimate_pls(data = security_data_sem, measurement_model = sec_measurement_model, structural_model = sec_structural_model)
+
+sec_pls_sum <- summary(sec_pls)
+
+pls_variable <- sec_pls_sum$composite_scores
+```
+
+
+```{r}
+library(clusterGeneration)
+library(mvtnorm)
+library(randomForest)
+ 
+set.seed(123) # = Seed for Replication = #
+N = nrow(pls_variable)
+M=500 # = Number of Simumations = #
+ 
+# = Matrix to store results = #
+thetahat=matrix(NA,M,3)
+colnames(thetahat)=c("OLS","Naive DML","Cross-fiting DML")
+
+
+#for(i in 1:M){
+  pls_variable_data <- data.frame(pls_variable)
+  z= pls_variable_data$REP + pls_variable_data$INV # = Generate z = #
+  sec = pls_variable_data$SEC
+  y=theta*sec + z # = Generate y = #
+ 
+  # = OLS estimate = #
+  OLS=coef(lm(y~sec))[2]
+  thetahat[i,1]=OLS
+ 
+  # = Naive DML = #
+  # = Compute ghat = #
+  model=randomForest(z,y)
+  G=predict(model,z)
+  # = Compute mhat = #
+  modeld=randomForest(z,sec,maxnodes = 15)
+  M=predict(modeld,z)
+  # = compute vhat as the residuals of the second model = #
+  V=sec-M
+  # = Compute DML theta = #
+  theta_nv=mean(V*(y-G))/mean(V*sec)
+  thetahat[i,2]=theta_nv
+ 
+  # = Cross-fitting DML = #
+  # = Split sample = #
+  I=sort(sample(1:N,N/2))
+  IC=setdiff(1:N,I)
+  # = compute ghat on both sample = #
+  model1=randomForest(z[IC,],y[IC],maxnodes = 10)
+  model2=randomForest(z[I,],y[I], maxnodes = 10)
+  G1=predict(model1,z[I,])
+  G2=predict(model2,z[IC,])
+ 
+  # = Compute mhat and vhat on both samples = #
+  modeld1=randomForest(z[IC,],d[IC],maxnodes = 10)
+  modeld2=randomForest(z[I,],d[I],maxnodes = 10)
+  M1=predict(modeld1,z[I,])
+  M2=predict(modeld2,z[IC,])
+  V1=d[I]-M1
+  V2=d[IC]-M2
+ 
+  # = Compute Cross-Fitting DML theta
+  theta1=mean(V1*(y[I]-G1))/mean(V1*d[I])
+  theta2=mean(V2*(y[IC]-G2))/mean(V2*d[IC])
+  theta_cf=mean(c(theta1,theta2))
+  thetahat[i,3]=theta_cf
+
+#}
+ 
+colMeans(thetahat) # = check the average theta for all models = #
+
+```
+

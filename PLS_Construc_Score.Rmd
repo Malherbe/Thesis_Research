@@ -7,7 +7,7 @@ output: word_document
 
 ```{r}
 library(seminr)
-security_data_sem = read.csv("security_data_sem.csv")
+security_data_sem = read.csv("data/security_data_sem.csv")
 ```
 
 ##        *Question #1 - Composite Path Models*
