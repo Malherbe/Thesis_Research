@@ -15,8 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(glmnet)
 
 #Define predictor and response variables
-y <- mtcars$hp
-x <- data.matrix(mtcars[, c('mpg', 'wt', 'drat', 'qsec')])
+y <- mtcars$mpg
+x <- data.matrix(mtcars[, c('hp', 'wt', 'drat', 'qsec')])
 
 #fit lasso regression model using k-fold cross-validation
 cv_model <- cv.glmnet(x, y, alpha = 1)
