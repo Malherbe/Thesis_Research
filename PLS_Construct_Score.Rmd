@@ -30,13 +30,13 @@ sec_measurement_model <- constructs(
 
 ```{r}
 sec_structural_model <- relationships(
-  paths(from = c("REP","INV","POL", "FAML", "REP*POL"), to = "SEC"),
+  paths(from = c("REP","INV","POL", "FAML"), to = "SEC"),
   paths(from = "SEC", to = "TRUST")
   
 )
 
 sec_pls <- estimate_pls(data = security_data_sem, measurement_model = sec_measurement_model, structural_model = sec_structural_model)
-
+sec_pls$path_coef["SEC", "TRUST"]
 ```
 
 ##            b-1) Plot a figure of the estimated model
@@ -75,7 +75,7 @@ sec_pls_sum$paths
 ```{r}
 ## COmposite Score (COnstruct Scoore)
 
-sec_pls_sum$composite_scores
+sec_pls_sum$composite_scores[,"TRUST"]
 ```
 
 
