@@ -17,11 +17,11 @@ set.seed(83483473)
 
 #Define predictor and response variables
 y <- mtcars$mpg
-<<<<<<< HEAD
+
 x <- data.matrix(mtcars[, c('hp', 'wt', 'drat', 'qsec')])
-=======
+
 x <- data.matrix(mtcars[, -which(names(mtcars) == ("mpg"))])
->>>>>>> 94162551e4e5e784f88340e71305e4cf6a30ceba
+
 
 #fit lasso regression model using k-fold cross-validation
 cv_model <- cv.glmnet(x, y, alpha = 1)

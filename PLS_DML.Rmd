@@ -41,6 +41,7 @@ pls_variable <- sec_pls_sum$composite_scores
 ```
 
 
+
 ```{r}
 library(clusterGeneration)
 library(mvtnorm)
@@ -55,10 +56,10 @@ thetahat=matrix(NA,M,3)
 colnames(thetahat)=c("OLS","Naive DML","Cross-fiting DML")
 
 
-#for(i in 1:M){
-  pls_variable_data <- data.frame(pls_variable)
-  z= pls_variable_data$REP + pls_variable_data$INV # = Generate z = #
-  sec = pls_variable_data$SEC
+for(i in 1:M){
+  
+  z= pls_variable[,"REP"] + pls_variable[,"INV"]# = Generate z = #
+  sec = pls_variable[,"SEC"]
   y=theta*sec + z # = Generate y = #
  
   # = OLS estimate = #
@@ -67,11 +68,11 @@ colnames(thetahat)=c("OLS","Naive DML","Cross-fiting DML")
  
   # = Naive DML = #
   # = Compute ghat = #
-  model=randomForest(z,y)
-  G=predict(model,z)
+  model=randomForest(as.matrix(z),y)
+  G=predict(model,as.matrix(z))
   # = Compute mhat = #
-  modeld=randomForest(z,sec,maxnodes = 15)
-  M=predict(modeld,z)
+  modeld=randomForest(as.matrix(z),sec)
+  M=predict(modeld,as.matrix(z))
   # = compute vhat as the residuals of the second model = #
   V=sec-M
   # = Compute DML theta = #
@@ -83,16 +84,17 @@ colnames(thetahat)=c("OLS","Naive DML","Cross-fiting DML")
   I=sort(sample(1:N,N/2))
   IC=setdiff(1:N,I)
   # = compute ghat on both sample = #
-  model1=randomForest(z[IC,],y[IC],maxnodes = 10)
-  model2=randomForest(z[I,],y[I], maxnodes = 10)
-  G1=predict(model1,z[I,])
-  G2=predict(model2,z[IC,])
+  z_mat = as.matrix(z)
+  model1=randomForest(as.matrix(z_mat[IC,]),y[IC])
+  model2=randomForest(as.matrix(z_mat[I,]),y[I])
+  G1=predict(model1,as.matrix(z_mat[I,]))
+  G2=predict(model2,as.matrix(z_mat[IC,]))
  
   # = Compute mhat and vhat on both samples = #
-  modeld1=randomForest(z[IC,],d[IC],maxnodes = 10)
-  modeld2=randomForest(z[I,],d[I],maxnodes = 10)
-  M1=predict(modeld1,z[I,])
-  M2=predict(modeld2,z[IC,])
+  modeld1=randomForest(as.matrix(z_mat[IC,]),d[IC])
+  modeld2=randomForest(as.matrix(z_mat[I,]),d[I])
+  M1=predict(modeld1,as.matrix(z_mat[I,]))
+  M2=predict(modeld2,as.matrix(z_mat[IC,]))
   V1=d[I]-M1
   V2=d[IC]-M2
  
@@ -102,7 +104,7 @@ colnames(thetahat)=c("OLS","Naive DML","Cross-fiting DML")
   theta_cf=mean(c(theta1,theta2))
   thetahat[i,3]=theta_cf
 
-#}
+}
  
 colMeans(thetahat) # = check the average theta for all models = #
 
