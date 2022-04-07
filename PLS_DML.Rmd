@@ -23,8 +23,6 @@ sec_measurement_model <- constructs(
   composite("POL", multi_items('PPSS',1:3)),
   composite("FAML", single_item('FAML1')),
   interaction_term(iv = 'REP', moderator = 'POL', method = orthogonal)
-  
-  
 )
 
 sec_structural_model <- relationships(
@@ -33,13 +31,38 @@ sec_structural_model <- relationships(
   
 )
 
-sec_pls <- estimate_pls(data = security_data_sem, measurement_model = sec_measurement_model, structural_model = sec_structural_model)
+sec_pls <- estimate_pls(data = security_data_sem, 
+                        measurement_model = sec_measurement_model, 
+                        structural_model = sec_structural_model)
 
 sec_pls_sum <- summary(sec_pls)
 
-pls_variable <- sec_pls_sum$composite_scores
+# pls_variable <- as.data.frame(sec_pls_sum$composite_scores)
 ```
 
+```{r}
+sec_sm_full <- relationships(
+  paths(from = c("REP","INV","POL", "FAML"),        to = "SEC"),
+  paths(from = c("REP","INV","POL", "FAML", "SEC"), to = "TRUST")
+)
+
+sec_pls_full <- estimate_pls(data = security_data_sem, 
+                             measurement_model = sec_measurement_model, 
+                             structural_model = sec_sm_full)
+
+sec_pls_full_sum <- summary(sec_pls_full)
+
+pls_variable <- as.data.frame(sec_pls_full_sum$composite_scores)
+
+pls_theta <- sec_pls_full$path_coef["SEC", "TRUST"]
+pls_theta
+```
+
+```{r}
+# OLS regression without Z variables
+ols_theta = coef(lm(TRUST ~ SEC, data = pls_variable))[2]
+ols_theta
+```
 
 
 ```{r}
@@ -49,64 +72,70 @@ library(randomForest)
  
 set.seed(123) # = Seed for Replication = #
 N = nrow(pls_variable)
-M=500 # = Number of Simumations = #
  
-# = Matrix to store results = #
-thetahat=matrix(NA,M,3)
-colnames(thetahat)=c("OLS","Naive DML","Cross-fiting DML")
+z = pls_variable[,c("REP", "INV", "POL", "FAML")]
+sec = pls_variable[,"SEC"]
+trust = pls_variable[,"TRUST"]
 
-
-for(i in 1:M){
-  
-  z= pls_variable[,"REP"] + pls_variable[,"INV"]# = Generate z = #
-  sec = pls_variable[,"SEC"]
-  y=theta*sec + z # = Generate y = #
- 
-  # = OLS estimate = #
-  OLS=coef(lm(y~sec))[2]
-  thetahat[i,1]=OLS
- 
-  # = Naive DML = #
-  # = Compute ghat = #
-  model=randomForest(as.matrix(z),y)
-  G=predict(model,as.matrix(z))
-  # = Compute mhat = #
-  modeld=randomForest(as.matrix(z),sec)
-  M=predict(modeld,as.matrix(z))
-  # = compute vhat as the residuals of the second model = #
-  V=sec-M
-  # = Compute DML theta = #
-  theta_nv=mean(V*(y-G))/mean(V*sec)
-  thetahat[i,2]=theta_nv
- 
-  # = Cross-fitting DML = #
-  # = Split sample = #
-  I=sort(sample(1:N,N/2))
-  IC=setdiff(1:N,I)
-  # = compute ghat on both sample = #
-  z_mat = as.matrix(z)
-  model1=randomForest(as.matrix(z_mat[IC,]),y[IC])
-  model2=randomForest(as.matrix(z_mat[I,]),y[I])
-  G1=predict(model1,as.matrix(z_mat[I,]))
-  G2=predict(model2,as.matrix(z_mat[IC,]))
- 
-  # = Compute mhat and vhat on both samples = #
-  modeld1=randomForest(as.matrix(z_mat[IC,]),d[IC])
-  modeld2=randomForest(as.matrix(z_mat[I,]),d[I])
-  M1=predict(modeld1,as.matrix(z_mat[I,]))
-  M2=predict(modeld2,as.matrix(z_mat[IC,]))
-  V1=d[I]-M1
-  V2=d[IC]-M2
- 
-  # = Compute Cross-Fitting DML theta
-  theta1=mean(V1*(y[I]-G1))/mean(V1*d[I])
-  theta2=mean(V2*(y[IC]-G2))/mean(V2*d[IC])
-  theta_cf=mean(c(theta1,theta2))
-  thetahat[i,3]=theta_cf
-
-}
- 
-colMeans(thetahat) # = check the average theta for all models = #
-
+# = Naive DML = #
+# = Compute ghat = #
+model = randomForest(as.matrix(z), trust)
+G=predict(model,as.matrix(z))
+# = Compute mhat = #
+modeld=randomForest(as.matrix(z),sec)
+M=predict(modeld,as.matrix(z))
+# = compute vhat as the residuals of the second model = #
+V=sec-M
+# = Compute DML theta = #
+theta_nv=mean(V*(trust-G))/mean(V*sec)
+theta_nv
 ```
 
+naive_dml <- function(z, d, y) {
+  # ...
+  # should return theta estimate
+}
+
+naive_dml_theta <- naive_dml(z, sec, trust)
+
+```{r}
+# = Cross-fitting DML = #
+# = Split sample = #
+I=sort(sample(1:N,N/2))
+IC=setdiff(1:N,I)
+# = compute ghat on both sample = #
+z_mat = as.matrix(z)
+model1=randomForest(as.matrix(z_mat[IC,]),trust[IC])
+model2=randomForest(as.matrix(z_mat[I,]),trust[I])
+G1=predict(model1,as.matrix(z_mat[I,]))
+G2=predict(model2,as.matrix(z_mat[IC,]))
+
+# = Compute mhat and vhat on both samples = #
+modeld1=randomForest(as.matrix(z_mat[IC,]),sec[IC])
+modeld2=randomForest(as.matrix(z_mat[I,]),sec[I])
+M1=predict(modeld1,as.matrix(z_mat[I,]))
+M2=predict(modeld2,as.matrix(z_mat[IC,]))
+V1=sec[I]-M1
+V2=sec[IC]-M2
+
+# = Compute Cross-Fitting DML theta
+theta1=mean(V1*(trust[I]-G1))/mean(V1*sec[I])
+theta2=mean(V2*(trust[IC]-G2))/mean(V2*sec[IC])
+theta_cf=mean(c(theta1,theta2))
+theta_cf
+```
+
+# z: dataframe of control variables
+# d: vector of explanatory variable of interest
+# y: vector of outcome variable of interest
+cf_dml <- function(z, d, y) {
+  # ...
+  # should return theta estimate
+}
+
+naive_dml_theta <- cf_dml(z, sec, trust)
+
+
+# TODO
+# 1. Write naive_dml() and cf_dml() functions that we can reuse on new models
+# 2. Use the raw data items of REP, INV, POL, FAML as "z" for naive_dml() and cf_dml()
