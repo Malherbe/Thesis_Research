@@ -90,6 +90,22 @@ V=sec-M
 theta_nv=mean(V*(trust-G))/mean(V*sec)
 theta_nv
 ```
+```{r}
+## Naive DML function 
+naive_dml <- function(cont_var,expl_var,outc_var){
+  model = randomForest(as.matrix(cont_var), outc_var)
+  G=predict(model,as.matrix(cont_var))
+  modeld=randomForest(as.matrix(cont_var),expl_var)
+  M=predict(modeld,as.matrix(cont_var))
+  V=expl_var-M
+  theta_nv=mean(V*(outc_var-G))/mean(V*expl_var)
+  return(theta_nv)
+}
+```
+
+```{r}
+naive_dml(z,sec,trust)
+```
 
 naive_dml <- function(z, d, y) {
   # ...
@@ -124,6 +140,38 @@ theta2=mean(V2*(trust[IC]-G2))/mean(V2*sec[IC])
 theta_cf=mean(c(theta1,theta2))
 theta_cf
 ```
+
+```{r}
+## Cross-fitting function
+cf_dml <- function(numb_var,cont_var,expl_var,outc_var){
+  I=sort(sample(1:numb_var,numb_var/2))
+  IC=setdiff(1:numb_var,I)
+  
+  z_mat = as.matrix(cont_var)
+  model1=randomForest(as.matrix(z_mat[IC,]),outc_var[IC])
+  model2=randomForest(as.matrix(z_mat[I,]),outc_var[I])
+  G1=predict(model1,as.matrix(z_mat[I,]))
+  G2=predict(model2,as.matrix(z_mat[IC,]))
+  
+  modeld1=randomForest(as.matrix(z_mat[IC,]),expl_var[IC])
+  modeld2=randomForest(as.matrix(z_mat[I,]),expl_var[I])
+  M1=predict(modeld1,as.matrix(z_mat[I,]))
+  M2=predict(modeld2,as.matrix(z_mat[IC,]))
+  V1=expl_var[I]-M1
+  V2=expl_var[IC]-M2
+  
+  theta1=mean(V1*(trust[I]-G1))/mean(V1*expl_var[I])
+  theta2=mean(V2*(trust[IC]-G2))/mean(V2*expl_var[IC])
+  theta_cf=mean(c(theta1,theta2))
+  return(theta_cf)
+}
+```
+
+```{r}
+cf_dml(N,z,sec,trust)
+```
+
+
 
 # z: dataframe of control variables
 # d: vector of explanatory variable of interest
