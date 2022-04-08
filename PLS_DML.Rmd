@@ -187,3 +187,15 @@ naive_dml_theta <- cf_dml(z, sec, trust)
 # TODO
 # 1. Write naive_dml() and cf_dml() functions that we can reuse on new models
 # 2. Use the raw data items of REP, INV, POL, FAML as "z" for naive_dml() and cf_dml()
+
+
+```{r}
+# naive_dml() and cf_dml() using the raw data items
+
+z_item = security_data_sem[,c("PINV1","PINV2", "PINV3", "PPSS1", "PPSS2", "PPSS3", "FAML1","PREP1","PREP2","PREP3","PREP4")]
+
+naive_dml(z_item,sec,trust)
+
+cf_dml(N,z_item,sec,trust)
+```
+
