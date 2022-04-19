@@ -215,6 +215,25 @@ mc_cf_dml <- function(k=100, cont_var, expl_var, outc_var) {
 }
 ```
 
+# Using z constructs with MC-CF-DML
+```{r}
+mc_cf_dml_construct <- mc_cf_dml(k=1000,z, sec, trust)
+```
+
+```{r}
+plot(density(mc_cf_dml_construct$theta_replicates))
+```
+
+# Using z items with MC-CF-DML
+```{r}
+mc_cf_dml_items <- mc_cf_dml(k=1000,z_item, sec, trust)
+```
+```{r}
+plot(density(mc_cf_dml_items$theta_replicates))
+```
+
+
+
 # TODO:
 4. Run MC-CF-DML data
   a. research a bit about mc methods (take notes and citations)
