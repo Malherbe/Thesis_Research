@@ -151,26 +151,33 @@ theta_cf
 
 ```{r}
 ## Cross-fitting function
-cf_dml <- function(cont_var, expl_var, outc_var){
+cf_dml <- function(cont_var, expl_var, outc_var, bootstrap=FALSE){
   numb_var <- length(outc_var)
-  I <- sort(sample(1:numb_var, numb_var/2))
-  IC <- setdiff(1:numb_var, I)
+  
+  if (bootstrap == TRUE) {
+    # boot_i <- resample with replacement row indices
+    # I  <- # use first half of row bootstrapped indices
+    # IC <- # use second half of row bootstrapped indices
+  } else {
+    I  <- sort(sample(1:numb_var, numb_var/2)) # add randomness
+    IC <- setdiff(1:numb_var, I)
+  }
   
   z_mat <- as.matrix(cont_var)
-  model1 <- randomForest(as.matrix(z_mat[IC,]), outc_var[IC])
-  model2 <- randomForest(as.matrix(z_mat[I,]), outc_var[I])
+  model1 <- randomForest(as.matrix(z_mat[IC,]), outc_var[IC]) # some randomness
+  model2 <- randomForest(as.matrix(z_mat[I,]), outc_var[I]) # some randomness
   G1 <- predict(model1, as.matrix(z_mat[I,]))
   G2 <- predict(model2, as.matrix(z_mat[IC,]))
   
-  modeld1 <- randomForest(as.matrix(z_mat[IC,]), expl_var[IC])
-  modeld2 <- randomForest(as.matrix(z_mat[I,]), expl_var[I])
+  modeld1 <- randomForest(as.matrix(z_mat[IC,]), expl_var[IC]) # some randomness
+  modeld2 <- randomForest(as.matrix(z_mat[I,]), expl_var[I]) # some randomness
   M1 <- predict(modeld1, as.matrix(z_mat[I,]))
   M2 <- predict(modeld2, as.matrix(z_mat[IC,]))
   V1 <- expl_var[I]-M1
   V2 <- expl_var[IC]-M2
   
-  theta1 <- mean(V1*(trust[I]-G1))/mean(V1*expl_var[I])
-  theta2 <- mean(V2*(trust[IC]-G2))/mean(V2*expl_var[IC])
+  theta1 <- mean(V1*(outc_var[I]-G1))/mean(V1*expl_var[I])
+  theta2 <- mean(V2*(outc_var[IC]-G2))/mean(V2*expl_var[IC])
   theta_cf <- mean(c(theta1,theta2))
   return(theta_cf)
 }
@@ -208,8 +215,19 @@ cf_dml(z_item, sec, trust)
 # Monte Carlo CF-DML
  
 ```{r} 
+library(parallel)
+
 mc_cf_dml <- function(k=100, cont_var, expl_var, outc_var) {
-  mc_results <- replicate(k, cf_dml(cont_var, expl_var, outc_var))
+  cl <- parallel::makeCluster(detectCores())
+  parallel::clusterExport(cl=cl, 
+                          varlist=c("cont_var", "expl_var", "outc_var", "cf_dml"), 
+                          envir=environment())
+  clusterEvalQ(cl, {library(randomForest)})
+  mc_results <- parallel::parSapply(cl, 1:k, 
+                                    function(i) { cf_dml(cont_var, expl_var, outc_var) }
+  )
+  stopCluster(cl)
+
   list(theta_replicates = mc_results,
        theta_mean = mean(mc_results))
 }
@@ -217,6 +235,7 @@ mc_cf_dml <- function(k=100, cont_var, expl_var, outc_var) {
 
 # Using z constructs with MC-CF-DML
 ```{r}
+set.seed(367387)
 mc_cf_dml_construct <- mc_cf_dml(k=1000,z, sec, trust)
 ```
 
@@ -226,21 +245,44 @@ plot(density(mc_cf_dml_construct$theta_replicates))
 
 # Using z items with MC-CF-DML
 ```{r}
-mc_cf_dml_items <- mc_cf_dml(k=1000,z_item, sec, trust)
+set.seed(367387)
+mc_cf_dml_items <- mc_cf_dml(k=1000, z_item, sec, trust)
 ```
+
 ```{r}
 plot(density(mc_cf_dml_items$theta_replicates))
+```
+
+## MC-CFDML Results
+
+Means:
+```{r}
+mc_cf_dml_construct$theta_mean
+mc_cf_dml_items$theta_mean
+```
+
+Standard Errors:
+```{r}
+sd(mc_cf_dml_construct$theta_replicates)
+sd(mc_cf_dml_items$theta_replicates)
 ```
 
 
 
 # TODO:
-4. Run MC-CF-DML data
-  a. research a bit about mc methods (take notes and citations)
-  b. using z constructs (1000 iterations)
-  c. using z items (1000 iterations)
-  d. visualize distribution of both runs
-  e. understand the difference in estimations
+5. Boostrapped MC-CFDML
+  a. Run z-construct Boostrapped MC-CFDML
+  b. Run z-item Boostrapped MC-CFDML
+  c. Visualize results
+  d. See Means and Standard Errors
+
+# MAYBE TODO LATER:
+X. Let's re-estimate an indirect effect using CF_DML:
+  a. get indirect effect and its CI
+    - bootstrap sec_pls_full model using seminr::bootstrap_model() [let's call it boot_pls_full]
+    - estimate the indirect effect of POL -> (SEC) -> TRUST
+      seminr::specific_effect_significance(boot_pls_full, from = "POL", to = "TRUST", through = "SEC")
+  b. 
 
 # DONE
 1. Write naive_dml() and cf_dml() functions that we can reuse on new models --> DONE!
@@ -251,3 +293,9 @@ Observations:
 3. To get a stable CF-DML estimate, run CF-DML 100 times and take average theta result
   a. Create mcCF-DML function (monte carlo CF-DML) -- it will call cf_dml() k number of times and return a list: vector of theta estimates; average theta
   b. Get a distribution of theta estimates
+4. Run MC-CF-DML data
+  a. research a bit about mc methods (take notes and citations) --> DONE!
+  b. using z constructs (1000 iterations) --> DONE!
+  c. using z items (1000 iterations) --> DONE!
+  d. visualize distribution of both runs --> DONE!
+  e. understand the difference in estimations --> DONE! (not much difference)
