@@ -114,12 +114,7 @@ naive_dml <- function(cont_var,expl_var,outc_var){
 naive_dml(z, sec, trust)
 ```
 
-naive_dml <- function(z, d, y) {
-  # ...
-  # should return theta estimate
-}
 
-naive_dml_theta <- naive_dml(z, sec, trust)
 
 # Cross-Fitting DML
 ```{r}
@@ -156,8 +151,11 @@ cf_dml <- function(cont_var, expl_var, outc_var, bootstrap=FALSE){
   
   if (bootstrap == TRUE) {
     # boot_i <- resample with replacement row indices
+    boot_i <- sample(numb_var, size = length(numb_var), replace = TRUE)
     # I  <- # use first half of row bootstrapped indices
+    I <- boot_i[1:(length(boot_i)/2)]
     # IC <- # use second half of row bootstrapped indices
+    IC <- setdiff(1:boot_i, I)
   } else {
     I  <- sort(sample(1:numb_var, numb_var/2)) # add randomness
     IC <- setdiff(1:numb_var, I)
