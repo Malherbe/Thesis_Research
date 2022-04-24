@@ -215,14 +215,14 @@ cf_dml(z_item, sec, trust)
 ```{r} 
 library(parallel)
 
-mc_cf_dml <- function(k=100, cont_var, expl_var, outc_var) {
+mc_cf_dml <- function(k=100, cont_var, expl_var, outc_var, bootstrap=FALSE) {
   cl <- parallel::makeCluster(detectCores())
   parallel::clusterExport(cl=cl, 
                           varlist=c("cont_var", "expl_var", "outc_var", "cf_dml"), 
                           envir=environment())
   clusterEvalQ(cl, {library(randomForest)})
   mc_results <- parallel::parSapply(cl, 1:k, 
-                                    function(i) { cf_dml(cont_var, expl_var, outc_var) }
+                                    function(i) { cf_dml(cont_var, expl_var, outc_var, bootstrap=FALSE) }
   )
   stopCluster(cl)
 
@@ -266,6 +266,38 @@ sd(mc_cf_dml_items$theta_replicates)
 ```
 
 
+# Using z constructs with Boostrapped MC-CF-DML
+```{r}
+set.seed(367387)
+mc_cf_dml_const_boot <- mc_cf_dml(k=1000,z, sec, trust, bootstrap == TRUE)
+```
+
+```{r}
+plot(density(mc_cf_dml_const_boot$theta_replicates))
+```
+
+# Using z items with Boostrapped MC-CF-DML
+```{r}
+set.seed(367387)
+mc_cf_dml_items_boot <- mc_cf_dml(k=1000, z_item, sec, trust, bootstrap == TRUE)
+```
+
+```{r}
+plot(density(mc_cf_dml_items_boot$theta_replicates))
+```
+## Boostrapped MC-CFDML Results
+
+Means:
+```{r}
+mc_cf_dml_const_boot$theta_mean
+mc_cf_dml_items_boot$theta_mean
+```
+
+Standard Errors:
+```{r}
+sd(mc_cf_dml_const_boot$theta_replicates)
+sd(mc_cf_dml_items_boot$theta_replicates)
+```
 
 # TODO:
 5. Boostrapped MC-CFDML
