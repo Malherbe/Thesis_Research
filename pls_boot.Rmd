@@ -1,0 +1,13 @@
+---
+title: "PLS Bootstrapped"
+author: '109077446'
+date: "4/1/2022"
+output: html_document
+---
+
+
+TODO:
+1. Run Security PLS model
+  a. Make sure you can find fitted values and residuals from PLS
+2. Try a residual bootstrap
+3. Try a wild bootstrap

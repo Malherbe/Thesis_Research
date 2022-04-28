@@ -146,20 +146,22 @@ theta_cf
 
 ```{r}
 ## Cross-fitting function
+# e.g., cf_dml(z, sec, trust, bootstrap=TRUE)
 cf_dml <- function(cont_var, expl_var, outc_var, bootstrap=FALSE){
-  numb_var <- length(outc_var)
+  num_rows <- length(outc_var)
   
   if (bootstrap == TRUE) {
     # boot_i <- resample with replacement row indices
-    boot_i <- sample(numb_var, size = length(numb_var), replace = TRUE)
+    boot_i <- sample(num_rows, size = num_rows, replace = TRUE)
     # I  <- # use first half of row bootstrapped indices
-    I <- boot_i[1:(length(boot_i)/2)]
+    I <- boot_i[1:(round(length(boot_i)/2))]
     # IC <- # use second half of row bootstrapped indices
-    IC <- setdiff(1:boot_i, I)
+    IC <- boot_i[(round(length(boot_i)/2)+1):length(boot_i)]
   } else {
-    I  <- sort(sample(1:numb_var, numb_var/2)) # add randomness
-    IC <- setdiff(1:numb_var, I)
+    I  <- sort(sample(1:num_rows, num_rows/2)) # add randomness
+    IC <- setdiff(1:num_rows, I)
   }
+  browser()
   
   z_mat <- as.matrix(cont_var)
   model1 <- randomForest(as.matrix(z_mat[IC,]), outc_var[IC]) # some randomness
@@ -266,26 +268,27 @@ sd(mc_cf_dml_items$theta_replicates)
 ```
 
 
-# Using z constructs with Boostrapped MC-CF-DML
+## BOOTSTRAPPED CF-DML
+# Using z constructs with Bootstrapped MC-CF-DML
 ```{r}
 set.seed(367387)
-mc_cf_dml_const_boot <- mc_cf_dml(k=1000,z, sec, trust, bootstrap == TRUE)
+mc_cf_dml_const_boot <- mc_cf_dml(k=1000,z, sec, trust, bootstrap = TRUE)
 ```
 
 ```{r}
 plot(density(mc_cf_dml_const_boot$theta_replicates))
 ```
 
-# Using z items with Boostrapped MC-CF-DML
+# Using z items with Bootstrapped MC-CF-DML
 ```{r}
 set.seed(367387)
-mc_cf_dml_items_boot <- mc_cf_dml(k=1000, z_item, sec, trust, bootstrap == TRUE)
+mc_cf_dml_items_boot <- mc_cf_dml(k=1000, z_item, sec, trust, bootstrap = TRUE)
 ```
 
 ```{r}
 plot(density(mc_cf_dml_items_boot$theta_replicates))
 ```
-## Boostrapped MC-CFDML Results
+## Bootstrapped MC-CFDML Results
 
 Means:
 ```{r}
@@ -300,11 +303,6 @@ sd(mc_cf_dml_items_boot$theta_replicates)
 ```
 
 # TODO:
-5. Boostrapped MC-CFDML
-  a. Run z-construct Boostrapped MC-CFDML
-  b. Run z-item Boostrapped MC-CFDML
-  c. Visualize results
-  d. See Means and Standard Errors
 
 # MAYBE TODO LATER:
 X. Let's re-estimate an indirect effect using CF_DML:
@@ -313,6 +311,8 @@ X. Let's re-estimate an indirect effect using CF_DML:
     - estimate the indirect effect of POL -> (SEC) -> TRUST
       seminr::specific_effect_significance(boot_pls_full, from = "POL", to = "TRUST", through = "SEC")
   b. 
+X. Conduct CFDML/MC-CFDML/Boot-CFDML on another only items (not the SEC/TRUST constructs)
+X. Repeat CFDML/MC-CFDML/Boot-CFDML on another dataset+model (where nonlinear effects are found to be present)
 
 # DONE
 1. Write naive_dml() and cf_dml() functions that we can reuse on new models --> DONE!
@@ -323,9 +323,14 @@ Observations:
 3. To get a stable CF-DML estimate, run CF-DML 100 times and take average theta result
   a. Create mcCF-DML function (monte carlo CF-DML) -- it will call cf_dml() k number of times and return a list: vector of theta estimates; average theta
   b. Get a distribution of theta estimates
-4. Run MC-CF-DML data
+4. Run Montecarlo CFDML data
   a. research a bit about mc methods (take notes and citations) --> DONE!
   b. using z constructs (1000 iterations) --> DONE!
   c. using z items (1000 iterations) --> DONE!
   d. visualize distribution of both runs --> DONE!
   e. understand the difference in estimations --> DONE! (not much difference)
+5. Run Bootstrapped CFDML --> DONE! (no differences from regular MC-CFDML)
+  a. Run z-construct Bootstrapped MC-CFDML
+  b. Run z-item Bootstrapped MC-CFDML
+  c. Visualize results
+  d. See Means and Standard Errors

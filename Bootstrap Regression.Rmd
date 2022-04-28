@@ -82,9 +82,12 @@ conf_interval <-
     newdata = data.frame(x = new.data),
     interval = "confidence",
     level = 0.95)
+conf_interval
 ```
 
-
+```{r}
+quantile(coefs[, "sample_coef_x1"], c(0.025, 0.975))
+```
 
 
 #Plotting the results on the project step-by-spet
@@ -139,10 +142,13 @@ res_boot <- function(sample_data, res) {
   
   unname(regrb$coefficients[2])
 }
+```
 
+
+```{r}
 set.seed(7893454)
 beta_boot <- replicate(1000, res_boot(sample_data, res))
-
+quantile(beta_boot, c(0.025, 0.975))
 ```
 
 
