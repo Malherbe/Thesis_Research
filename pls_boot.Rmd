@@ -8,6 +8,12 @@ output: html_document
 
 TODO:
 1. Run Security PLS model
-  a. Make sure you can find fitted values and residuals from PLS
+  a. Make sure you can find actual values, fitted values and residuals from PLS
+    - actual values: sec_pls_full$construct_scores
+    - fitted values:
+      - fitted <- predict(sec_pls_full, security_data_sem)
+      - fitted$predicted_items
+      - we have to make the construct scores from the item data
+      - trust_weights <- sec_pls_full$outer_weights[,"TRUST"][1:4]
 2. Try a residual bootstrap
 3. Try a wild bootstrap
