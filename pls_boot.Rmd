@@ -9,11 +9,14 @@ output: html_document
 TODO:
 1. Run Security PLS model
   a. Make sure you can find actual values, fitted values and residuals from PLS
-    - actual values: sec_pls_full$construct_scores
+    - actual values: trust_actual_scores <- sec_pls_full$construct_scores[, "TRUST"]
     - fitted values:
       - fitted <- predict(sec_pls_full, security_data_sem)
-      - fitted$predicted_items
+      - trust_item_fitted_scores <- fitted$predicted_items[, 1:4]
       - we have to make the construct scores from the item data
       - trust_weights <- sec_pls_full$outer_weights[,"TRUST"][1:4]
+      - trust_fitted_construct_scores <- trust_item_fitted_scores %*% trust_weights
+      - trust_fitted_std_scores <- scale(trust_fitted_construct_scores)
+    - trust_fitted_residuals <- trust_actual_scores - trust_fitted_std_scores
 2. Try a residual bootstrap
 3. Try a wild bootstrap
