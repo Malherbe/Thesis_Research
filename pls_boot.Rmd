@@ -20,3 +20,104 @@ TODO:
     - trust_fitted_residuals <- trust_actual_scores - trust_fitted_std_scores
 2. Try a residual bootstrap
 3. Try a wild bootstrap
+
+```{r}
+library(seminr)
+security_data_sem = read.csv("data/security_data_sem.csv")
+
+sec_measurement_model <- constructs(
+  composite("TRUST", multi_items('TRST',1:4)),
+  composite("SEC", multi_items('PSEC',1:4)),
+  composite("REP", multi_items('PREP',1:4)),
+  composite("INV", multi_items('PINV',1:3)),
+  composite("POL", multi_items('PPSS',1:3)),
+  composite("FAML", single_item('FAML1'))
+  
+)
+
+```
+
+```{r}
+sec_sm_full <- relationships(
+  paths(from = c("REP","INV","POL", "FAML"),        to = "SEC"),
+  paths(from = c("REP","INV","POL", "FAML", "SEC"), to = "TRUST")
+)
+
+sec_pls_full <- estimate_pls(data = security_data_sem, 
+                             measurement_model = sec_measurement_model, 
+                             structural_model = sec_sm_full)
+
+plot(sec_pls_full)
+```
+
+
+
+
+## Actual Values
+```{r}
+trust_actual_scores <- sec_pls_full$construct_scores[, "TRUST"]
+```
+
+## fitted values
+
+```{r}
+fitted <- predict(sec_pls_full, security_data_sem)
+trust_item_fitted_scores <- fitted$predicted_items[, 1:4]
+trust_weights <- sec_pls_full$outer_weights[,"TRUST"][1:4]
+trust_fitted_construct_scores <- trust_item_fitted_scores %*% trust_weights
+trust_fitted_std_scores <- scale(trust_fitted_construct_scores)
+```
+
+
+## Residual Value
+```{r}
+trust_fitted_residuals <- trust_actual_scores - trust_fitted_std_scores
+```
+
+
+
+## The Residual Bootstrap
+
+```{r}
+
+
+
+res_boot <- function(actual_score, residual_score) {
+  # 2. Resample the residuals with replacement and obtain the bootstrapped residual vector resb
+  resb <- sample(residual_score, length(residual_score), replace = TRUE)
+  
+  # 3. Obtain the bootstrapped dependent variable by multiplying the estimator(s) from (1) with the original regressors and adding the bootstrapped residual
+  yb   <- actual_score  + resb
+  
+  # 4. Run the regression with the bootstrapped dependent variables and the original regressors
+  regrb <- lm(yb ~ actual_score)
+  
+  unname(regrb$coefficients[2])
+}
+```
+
+```{r}
+res_boot(trust_actual_scores,trust_fitted_residuals)
+```
+## Wild Bootstrap 
+
+```{r}
+wild_boot <- function(fit_val, res_val, actual_val) {
+  sample_frame <- data.frame(fit_val = fit_val, res_val=res_val, actual_val=actual_val)
+  
+  #normal_vector <- rnorm(nrow(sample_frame))
+  y_b <- fit_val + res_val * actual_val
+  
+  sample_frame$y_b <- y_b
+  wild_regr <- lm(fit_val ~ y_b, data=sample_frame)
+  
+  wild_regr$coefficients
+  #sample_frame
+}
+
+```
+
+```{r}
+wild_boot(trust_fitted_std_scores,trust_fitted_residuals,trust_actual_scores )
+```
+
