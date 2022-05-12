@@ -5,9 +5,8 @@ date: "4/1/2022"
 output: html_document
 ---
 
-
 TODO:
-1. Run Security PLS model
+1. Run Security PLS model --> DONE
   a. Make sure you can find actual values, fitted values and residuals from PLS
     - actual values: trust_actual_scores <- sec_pls_full$construct_scores[, "TRUST"]
     - fitted values:
@@ -18,8 +17,10 @@ TODO:
       - trust_fitted_construct_scores <- trust_item_fitted_scores %*% trust_weights
       - trust_fitted_std_scores <- scale(trust_fitted_construct_scores)
     - trust_fitted_residuals <- trust_actual_scores - trust_fitted_std_scores
-2. Try a residual bootstrap
-3. Try a wild bootstrap
+2. Try a residual bootstrap (scores) --> DONE
+3. Try a wild bootstrap (scores) --> DONE
+4. Try a residual bootstrap (items)
+5. Try a wild bootstrap (items)
 
 ```{r}
 library(seminr)
@@ -32,7 +33,6 @@ sec_measurement_model <- constructs(
   composite("INV", multi_items('PINV',1:3)),
   composite("POL", multi_items('PPSS',1:3)),
   composite("FAML", single_item('FAML1'))
-  
 )
 
 ```
@@ -66,6 +66,10 @@ trust_item_fitted_scores <- fitted$predicted_items[, 1:4]
 trust_weights <- sec_pls_full$outer_weights[,"TRUST"][1:4]
 trust_fitted_construct_scores <- trust_item_fitted_scores %*% trust_weights
 trust_fitted_std_scores <- scale(trust_fitted_construct_scores)
+
+# SOUMYA TODO: verify/update procedure to get fitted construct scores
+# scaled_predicted_items <- scale(fitted$predicted_items[, 1:4])
+# fitted_construct_scores <- scaled_predicted_items %*% trust_weights
 ```
 
 
@@ -74,50 +78,68 @@ trust_fitted_std_scores <- scale(trust_fitted_construct_scores)
 trust_fitted_residuals <- trust_actual_scores - trust_fitted_std_scores
 ```
 
+## X variable scores
+```{r}
+trust_antecedent_scores <- as.data.frame(sec_pls_full$construct_scores[, 1:5])
+```
 
 
 ## The Residual Bootstrap
 
 ```{r}
-
-
-
-res_boot <- function(actual_score, residual_score) {
+res_boot <- function(actual_scores, fitted_scores, residual_score, antecedent_scores) {
   # 2. Resample the residuals with replacement and obtain the bootstrapped residual vector resb
   resb <- sample(residual_score, length(residual_score), replace = TRUE)
   
   # 3. Obtain the bootstrapped dependent variable by multiplying the estimator(s) from (1) with the original regressors and adding the bootstrapped residual
-  yb   <- actual_score  + resb
+  yb   <- fitted_scores  + resb
   
   # 4. Run the regression with the bootstrapped dependent variables and the original regressors
-  regrb <- lm(yb ~ actual_score)
+  regrb <- lm(yb ~ REP + INV + POL + FAML + SEC, data=antecedent_scores)
   
-  unname(regrb$coefficients[2])
+  regrb$coefficients
 }
 ```
 
 ```{r}
-res_boot(trust_actual_scores,trust_fitted_residuals)
+set.seed(7893454)
+sec_res_boot <- t(
+  replicate(1000, 
+            res_boot(trust_actual_scores, trust_fitted_std_scores, 
+                     trust_fitted_residuals, trust_antecedent_scores))
+  ) |> as.data.frame()
 ```
+
+```{r}
+plot(density(sec_res_boot$SEC))
+```
+
 ## Wild Bootstrap 
 
 ```{r}
-wild_boot <- function(fit_val, res_val, actual_val) {
-  sample_frame <- data.frame(fit_val = fit_val, res_val=res_val, actual_val=actual_val)
+wild_boot <- function(actual_val, fit_val, res_val, ant_vals) {
+  # sample_frame <- cbind(actual_val, fit_val, res_val, ant_vals)
   
-  #normal_vector <- rnorm(nrow(sample_frame))
-  y_b <- fit_val + res_val * actual_val
+  normal_vector <- rnorm(length(actual_val))
+  y_b <- fit_val + res_val * normal_vector
   
-  sample_frame$y_b <- y_b
-  wild_regr <- lm(fit_val ~ y_b, data=sample_frame)
+  wild_regr <- lm(y_b ~ REP + INV + POL + FAML + SEC, data=ant_vals)
+  # wild_regr <- lm(fit_val ~ y_b, data=sample_frame)
   
   wild_regr$coefficients
   #sample_frame
 }
-
 ```
 
 ```{r}
-wild_boot(trust_fitted_std_scores,trust_fitted_residuals,trust_actual_scores )
+set.seed(7893454)
+sec_wild_boot <- t(
+  replicate(1000, 
+            wild_boot(trust_actual_scores, trust_fitted_std_scores, 
+                      trust_fitted_residuals, trust_antecedent_scores))
+  ) |> as.data.frame()
 ```
 
+```{r}
+plot(density(sec_wild_boot$SEC))
+```
