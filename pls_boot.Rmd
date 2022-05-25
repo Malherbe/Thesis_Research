@@ -87,7 +87,7 @@ trust_antecedent_scores <- as.data.frame(sec_pls_full$construct_scores[, 1:5])
 ## The Residual Bootstrap
 
 ```{r}
-res_boot <- function(actual_scores, fitted_scores, residual_score, antecedent_scores) {
+res_boot <- function(actual_scores,fitted_scores, residual_score, antecedent_scores) {
   # 2. Resample the residuals with replacement and obtain the bootstrapped residual vector resb
   resb <- sample(residual_score, length(residual_score), replace = TRUE)
   
@@ -142,4 +142,63 @@ sec_wild_boot <- t(
 
 ```{r}
 plot(density(sec_wild_boot$SEC))
+```
+
+
+## ITEMS
+
+```{r}
+z_item2 <-  security_data_sem[,c("PINV1","PINV2", "PINV3", "PPSS1", "PPSS2", "PPSS3", "FAML1","PREP1","PREP2","PREP3","PREP4")]
+```
+
+## Actual Values
+```{r}
+item_actual_scores <- sec_pls_full$construct_scores[, "TRUST"]
+```
+
+## fitted values
+
+```{r}
+fitted <- predict(sec_pls_full, security_data_sem)
+items_item_fitted_scores <- fitted$predicted_items[, 9:19]
+items_weights_rep <- sec_pls_full$outer_weights[,"REP"][9:12]
+items_weights_inv <- sec_pls_full$outer_weights[,"INV"][13:15]
+items_weights_pol <- sec_pls_full$outer_weights[,"POL"][16:18]
+items_weights_faml <- sec_pls_full$outer_weights[,"FAML"][19]
+items_weights <- c(items_weights_rep,items_weights_inv,items_weights_pol,items_weights_faml)
+items_fitted_construct_scores <- items_item_fitted_scores %*% items_weights
+items_fitted_std_scores <- scale(items_fitted_construct_scores)
+
+# SOUMYA TODO: verify/update procedure to get fitted construct scores
+# scaled_predicted_items <- scale(fitted$predicted_items[, 1:4])
+# fitted_construct_scores <- scaled_predicted_items %*% trust_weights
+```
+
+
+## Residual Value
+```{r}
+items_fitted_residuals <- item_actual_scores - items_fitted_std_scores
+```
+
+## X variable scores
+```{r}
+items_antecedent_scores <- as.data.frame(sec_pls_full$construct_scores[, 1:5])
+```
+
+
+## The Residual Bootstrap
+
+
+
+```{r}
+set.seed(7893454)
+sec_res_boot <- t(
+  replicate(1000, 
+            res_boot(item_actual_scores, items_fitted_std_scores, 
+                     items_fitted_residuals, items_antecedent_scores))
+  ) |> as.data.frame()
+```
+
+```{r}
+plot(density(sec_res_boot$SEC))
 ```
