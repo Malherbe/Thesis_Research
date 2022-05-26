@@ -19,8 +19,11 @@ TODO:
     - trust_fitted_residuals <- trust_actual_scores - trust_fitted_std_scores
 2. Try a residual bootstrap (scores) --> DONE
 3. Try a wild bootstrap (scores) --> DONE
-4. Try a residual bootstrap (items)
-5. Try a wild bootstrap (items)
+4. Try a residual bootstrap (sumscores) --> TODO?
+5. Try a wild bootstrap (sumscores) --> TODO?
+
+<!-- 4. Try a residual bootstrap (items) -->
+<!-- 5. Try a wild bootstrap (items) -->
 
 ```{r}
 library(seminr)
@@ -55,6 +58,8 @@ plot(sec_pls_full)
 
 ## Actual Values
 ```{r}
+# TO DISCUSS: Why can we use computed scores of Y (outcome) as "actual" values?
+# ANSWER --> the estimated scores of Y (i.e. Y*) are our best possible estimates of Y
 trust_actual_scores <- sec_pls_full$construct_scores[, "TRUST"]
 ```
 
@@ -87,9 +92,9 @@ trust_antecedent_scores <- as.data.frame(sec_pls_full$construct_scores[, 1:5])
 ## The Residual Bootstrap
 
 ```{r}
-res_boot <- function(actual_scores,fitted_scores, residual_score, antecedent_scores) {
+res_boot <- function(actual_scores, fitted_scores, residual_scores, antecedent_scores) {
   # 2. Resample the residuals with replacement and obtain the bootstrapped residual vector resb
-  resb <- sample(residual_score, length(residual_score), replace = TRUE)
+  resb <- sample(residual_scores, length(residual_scores), replace = TRUE)
   
   # 3. Obtain the bootstrapped dependent variable by multiplying the estimator(s) from (1) with the original regressors and adding the bootstrapped residual
   yb   <- fitted_scores  + resb
