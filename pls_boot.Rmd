@@ -49,6 +49,15 @@ sec_pls_full <- estimate_pls(data = security_data_sem,
 
 plot(sec_pls_full)
 ```
+## Ordinary non-parametric bootstrap
+```{r}
+ord_boot_pls <- bootstrap_model(sec_pls_full, nboot= 1000, cores = 2)
+```
+```{r}
+summary(ord_boot_pls)
+```
+
+
 
 
 
