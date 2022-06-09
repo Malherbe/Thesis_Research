@@ -109,7 +109,7 @@ res_boot <- function(actual_scores, fitted_scores, residual_scores, antecedent_s
   yb   <- fitted_scores  + resb
   
   # 4. Run the regression with the bootstrapped dependent variables and the original regressors
-  regrb <- lm(yb ~ REP + INV + POL + FAML + SEC, data=antecedent_scores)
+  regrb <- lm(yb ~ ., data=antecedent_scores)
   
   regrb$coefficients
 }
