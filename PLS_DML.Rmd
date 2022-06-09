@@ -161,7 +161,7 @@ cf_dml <- function(cont_var, expl_var, outc_var, bootstrap=FALSE){
     I  <- sort(sample(1:num_rows, num_rows/2)) # add randomness
     IC <- setdiff(1:num_rows, I)
   }
-  browser()
+  #browser()
   
   z_mat <- as.matrix(cont_var)
   model1 <- randomForest(as.matrix(z_mat[IC,]), outc_var[IC]) # some randomness
@@ -184,8 +184,21 @@ cf_dml <- function(cont_var, expl_var, outc_var, bootstrap=FALSE){
 ```
 
 ```{r}
-cf_dml(z, sec, trust)
+M=500 
+cf_dml_mat <- matrix(NA,M,1)
+
+for(i in 1:M){
+
+cf_dml_mat[i,1] <- cf_dml(z, sec, trust)
+}
+cf_dml_mat[,1]
 ```
+```{r}
+plot(density(cf_dml_mat[,1]))
+mean(cf_dml_mat[,1])
+sd(cf_dml_mat[,1])
+```
+
 
 
 

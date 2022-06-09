@@ -126,6 +126,8 @@ sec_res_boot <- t(
 
 ```{r}
 plot(density(sec_res_boot$SEC))
+mean(sec_res_boot$SEC)
+sd(sec_res_boot$SEC)
 ```
 
 ## Wild Bootstrap 
@@ -156,6 +158,8 @@ sec_wild_boot <- t(
 
 ```{r}
 plot(density(sec_wild_boot$SEC))
+mean(sec_wild_boot$SEC)
+sd(sec_wild_boot$SEC)
 ```
 
 
