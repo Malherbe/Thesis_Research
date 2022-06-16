@@ -54,7 +54,8 @@ plot(sec_pls_full)
 ```
 ## Ordinary non-parametric bootstrap
 ```{r}
-ord_boot_pls <- bootstrap_model(sec_pls_full, nboot= 1000, cores = 2)
+set.seed(32492398)
+ord_boot_pls <- bootstrap_model(sec_pls_full, nboot= 1000)
 ```
 ```{r}
 summary(ord_boot_pls)
@@ -75,21 +76,25 @@ trust_actual_scores <- sec_pls_full$construct_scores[, "TRUST"]
 ## fitted values
 
 ```{r}
-fitted <- predict(sec_pls_full, security_data_sem)
-trust_item_fitted_scores <- fitted$predicted_items[, 1:4]
-trust_weights <- sec_pls_full$outer_weights[,"TRUST"][1:4]
-trust_fitted_construct_scores <- trust_item_fitted_scores %*% trust_weights
-trust_fitted_std_scores <- scale(trust_fitted_construct_scores)
+# fitted <- predict(sec_pls_full, security_data_sem)
+# trust_item_fitted_scores <- fitted$predicted_items[, 1:4]
+# trust_weights <- sec_pls_full$outer_weights[,"TRUST"][1:4]
+# trust_fitted_construct_scores <- trust_item_fitted_scores %*% trust_weights
+# trust_fitted_std_scores <- scale(trust_fitted_construct_scores)
+
+trust_fitted_residuals <- trust_actual_scores - trust_fitted_std_scores
 
 # SOUMYA TODO: verify/update procedure to get fitted construct scores
 # scaled_predicted_items <- scale(fitted$predicted_items[, 1:4])
 # fitted_construct_scores <- scaled_predicted_items %*% trust_weights
 ```
 
-
-## Residual Value
+## Compute fitted values of y (trust_hat) and residuals (trust_residuals)
 ```{r}
-trust_fitted_residuals <- trust_actual_scores - trust_fitted_std_scores
+# Ray: second attempt to get correct residuals (Jun-16)
+beta_hat <- sec_pls_full$path_coef[names(trust_antecedent_scores), "TRUST"]
+trust_hat <- as.matrix(trust_antecedent_scores) %*% beta_hat
+trust_residuals <- trust_actual_scores - trust_hat
 ```
 
 ## X variable scores
@@ -97,11 +102,10 @@ trust_fitted_residuals <- trust_actual_scores - trust_fitted_std_scores
 trust_antecedent_scores <- as.data.frame(sec_pls_full$construct_scores[, 1:5])
 ```
 
-
 ## The Residual Bootstrap
 
 ```{r}
-res_boot <- function(actual_scores, fitted_scores, residual_scores, antecedent_scores) {
+res_boot <- function(fitted_scores, residual_scores, antecedent_scores) {
   # 2. Resample the residuals with replacement and obtain the bootstrapped residual vector resb
   resb <- sample(residual_scores, length(residual_scores), replace = TRUE)
   
@@ -116,11 +120,12 @@ res_boot <- function(actual_scores, fitted_scores, residual_scores, antecedent_s
 ```
 
 ```{r}
-set.seed(7893454)
+set.seed(32492398)
 sec_res_boot <- t(
   replicate(1000, 
-            res_boot(trust_actual_scores, trust_fitted_std_scores, 
-                     trust_fitted_residuals, trust_antecedent_scores))
+            # res_boot(trust_actual_scores, trust_fitted_std_scores, 
+            #          trust_fitted_residuals, trust_antecedent_scores))
+            res_boot(trust_hat, trust_residuals, trust_antecedent_scores))
   ) |> as.data.frame()
 ```
 
@@ -151,8 +156,10 @@ wild_boot <- function(actual_val, fit_val, res_val, ant_vals) {
 set.seed(7893454)
 sec_wild_boot <- t(
   replicate(1000, 
-            wild_boot(trust_actual_scores, trust_fitted_std_scores, 
-                      trust_fitted_residuals, trust_antecedent_scores))
+            # wild_boot(trust_actual_scores, trust_fitted_std_scores, 
+            #           trust_fitted_residuals, trust_antecedent_scores))
+            wild_boot(trust_actual_scores, trust_hat, 
+                      trust_residuals, trust_antecedent_scores))
   ) |> as.data.frame()
 ```
 
